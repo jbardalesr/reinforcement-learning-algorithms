@@ -4,74 +4,74 @@ import random
 
 
 class Bandit:
-    def __init__(self, k_arm=10, epsilon=0., initial_value=0) -> None:
+    def __init__(self,  k_arm, epsilon, initial_estimates) -> None:
+        self.initial_estimates = initial_estimates
         self.k_arm = k_arm
         self.epsilon = epsilon
-        self.initial_value = initial_value
-        self.time = 0
-        self.bandits = list(range(k_arm))  # [0, 1, ..., 9]
+        self.action_list = list(range(k_arm))  # q*(a), for a = 0, 1, ..., 9
         self.true_reward = 0.0
 
     def reset(self):
-        # each q is normal distributed and initial
-        self.q_star = np.random.normal(
-            loc=self.true_reward, scale=1.0, size=self.k_arm)
+        # q*(a) is an normal distribution with mean 0 and variance 1 for each action a = 0, 1, ..., 9 [Figure 2.1]
+        self.q_true = np.random.normal(loc=0.0, scale=1.0, size=self.k_arm)
 
-        # initially we don't now the true value of each q
-        self.q_estimation = np.zeros(self.k_arm) + self.initial_value
+        #  initial estimate Q1(a) = 0, for all a 
+        self.q_estimated = self.initial_estimates*1.0 # Q(A) = 0
 
-        # counts the occurence in an action
-        self.action_count = np.zeros(self.k_arm, dtype=int)
-
-        self.time = 0
+        # counts the occurence in an action 
+        self.action_count = np.zeros(self.k_arm, dtype=int) # N(A) = 0
 
     def action(self):
         # random variable epsilon-gredy simulation
         u = random.uniform(0, 1)
         if u < 1 - self.epsilon:
-            return np.argmax(self.q_estimation)
+            return np.argmax(self.q_estimated)
         else:
-            # select randomly an arm
-            return np.random.choice(self.bandits)
+            # select randomly an action list
+            return random.choice(self.action_list)
 
     def step(self, action: int):
-        # R_t has distribution normal with mean q*(A_t)
-        reward = random.gauss(self.q_star[action], 1)
-        self.time += 1
+        # R_t has distribution normal with mean q*(A_t) and variance 1 [Figure 2.1]
+        reward = random.gauss(self.q_true[action], 1)
+
         # update the occurrences in an action
         self.action_count[action] += 1
 
-        # sample averages
-        self.q_estimation[action] += (reward - self.q_estimation[action]
-                                      )/self.action_count[action]
+        # sample-average technique Q(A) = Q(A) + 1/N(A)*(R - Q(A))
+        self.q_estimated[action] += (reward - self.q_estimated[action]) / self.action_count[action]
 
         return reward
 
 
-def simulation(runs, time: int, bandit: Bandit):
+def bandit_algorithm(runs, time: int, bandit: Bandit, T_MAX=1000):
     rewards = np.zeros((runs, time))
     # number of simulations to obtain the mean
     for run in range(runs):
         bandit.reset()
         # we collect the reward in t=0,1,...,999
-        for t in range(time):
+        t = 0
+        while t < T_MAX:
             action = bandit.action()
             reward = bandit.step(action)
 
             rewards[run, t] = reward
+            t += 1
+
     mean_rewards = rewards.mean(axis=0)
     return mean_rewards
 
 
-epsilon_values = [0, 0.01, 0.1]
+epsilon_values = [0.0, 0.01, 0.1]
 
 runs = 2000
 time = 1000
+k_arm = 10
+initial_estimates = np.zeros(k_arm)
 
 plt.title("k-armed bandit")
 for epsilon in epsilon_values:
-    bandit = Bandit(epsilon=epsilon)
-    rewards = simulation(runs, time, bandit)
+    bandit = Bandit(k_arm, epsilon, initial_estimates)
+    rewards = bandit_algorithm(runs, time, bandit)
     plt.plot(rewards, label='$\epsilon = %.02f$' % (epsilon))
 
 plt.xlabel('steps')
