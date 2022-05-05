@@ -1,6 +1,7 @@
-from matplotlib.pyplot import axis
 import numpy as np
 import matplotlib.pyplot as plt
+import random
+
 
 class Bandit:
     def __init__(self, k_arm=10, epsilon=0., initial_value=0) -> None:
@@ -8,12 +9,13 @@ class Bandit:
         self.epsilon = epsilon
         self.initial_value = initial_value
         self.time = 0
-        self.bandits = np.arange(k_arm)  # [0, 1, ..., 9]
+        self.bandits = list(range(k_arm))  # [0, 1, ..., 9]
         self.true_reward = 0.0
 
     def reset(self):
         # each q is normal distributed and initial
-        self.q_true = np.random.randn(self.k_arm) + self.true_reward
+        self.q_star = np.random.normal(
+            loc=self.true_reward, scale=1.0, size=self.k_arm)
 
         # initially we don't now the true value of each q
         self.q_estimation = np.zeros(self.k_arm) + self.initial_value
@@ -25,7 +27,7 @@ class Bandit:
 
     def action(self):
         # random variable epsilon-gredy simulation
-        u = np.random.uniform()
+        u = random.uniform(0, 1)
         if u < 1 - self.epsilon:
             return np.argmax(self.q_estimation)
         else:
@@ -34,7 +36,7 @@ class Bandit:
 
     def step(self, action: int):
         # R_t has distribution normal with mean q*(A_t)
-        reward = np.random.rand() + self.q_true[action]
+        reward = random.gauss(self.q_star[action], 1)
         self.time += 1
         # update the occurrences in an action
         self.action_count[action] += 1
@@ -60,10 +62,13 @@ def simulation(runs, time: int, bandit: Bandit):
     mean_rewards = rewards.mean(axis=0)
     return mean_rewards
 
+
 epsilon_values = [0, 0.01, 0.1]
-    
+
 runs = 2000
 time = 1000
+
+plt.title("k-armed bandit")
 for epsilon in epsilon_values:
     bandit = Bandit(epsilon=epsilon)
     rewards = simulation(runs, time, bandit)
