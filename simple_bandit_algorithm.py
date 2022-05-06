@@ -14,12 +14,13 @@ class Bandit:
     def reset(self):
         # q*(a) is an normal distribution with mean 0 and variance 1 for each action a = 0, 1, ..., 9 [Figure 2.1]
         self.q_true = np.random.normal(loc=0.0, scale=1.0, size=self.k_arm)
+        self.optimal_action = np.argmax(self.q_true)
 
-        #  initial estimate Q1(a) = 0, for all a 
-        self.q_estimated = self.initial_estimates*1.0 # Q(A) = 0
+        #  initial estimate Q1(a) = 0, for all a
+        self.q_estimated = self.initial_estimates*1.0  # Q(A) = 0
 
-        # counts the occurence in an action 
-        self.action_count = np.zeros(self.k_arm, dtype=int) # N(A) = 0
+        # counts the occurence in an action
+        self.action_count = np.zeros(self.k_arm, dtype=int)  # N(A) = 0
 
     def action(self):
         # random variable epsilon-gredy simulation
@@ -45,6 +46,8 @@ class Bandit:
 
 def bandit_algorithm(runs, time: int, bandit: Bandit, T_MAX=1000):
     rewards = np.zeros((runs, time))
+    optimal_actions = np.zeros((runs, time))
+
     # number of simulations to obtain the mean
     for run in range(runs):
         bandit.reset()
@@ -55,10 +58,15 @@ def bandit_algorithm(runs, time: int, bandit: Bandit, T_MAX=1000):
             reward = bandit.step(action)
 
             rewards[run, t] = reward
+
+            if action == bandit.optimal_action:
+                optimal_actions[run, t] += 1
+
             t += 1
 
-    mean_rewards = rewards.mean(axis=0)
-    return mean_rewards
+    average_reward = rewards.mean(axis=0)
+    average_optimal_actions = optimal_actions.mean(axis=0)
+    return average_reward, average_optimal_actions
 
 
 epsilon_values = [0.0, 0.01, 0.1]
@@ -68,13 +76,24 @@ time = 1000
 k_arm = 10
 initial_estimates = np.zeros(k_arm)
 
-plt.title("k-armed bandit")
+fig, axes = plt.subplots(2, 1)
+
+plt.suptitle("k-armed bandit")
+
+axes[0].set_xlabel("steps")
+axes[0].set_ylabel("Average reward")
+
+axes[1].set_xlabel("steps")
+axes[1].set_ylabel("% Optimal action")
+
 for epsilon in epsilon_values:
     bandit = Bandit(k_arm, epsilon, initial_estimates)
-    rewards = bandit_algorithm(runs, time, bandit)
-    plt.plot(rewards, label='$\epsilon = %.02f$' % (epsilon))
+    rewards, optimal = bandit_algorithm(runs, time, bandit)
+    
+    axes[0].plot(rewards, label='$\epsilon = %.02f$' % (epsilon))
+    axes[1].plot(optimal, label='$\epsilon = %.02f$' % (epsilon))
 
-plt.xlabel('steps')
-plt.ylabel('average reward')
-plt.legend()
+axes[0].legend()
+axes[1].legend()
+
 plt.show()
