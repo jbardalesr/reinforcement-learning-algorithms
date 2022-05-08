@@ -9,7 +9,6 @@ class Bandit:
         self.k_arm = k_arm
         self.epsilon = epsilon
         self.action_list = list(range(k_arm))  # q*(a), for a = 0, 1, ..., 9
-        self.true_reward = 0.0
 
     def reset(self):
         # q*(a) is an normal distribution with mean 0 and variance 1 for each action a = 0, 1, ..., 9 [Figure 2.1]
@@ -20,7 +19,7 @@ class Bandit:
         self.q_estimated = self.initial_estimates*1.0  # Q(A) = 0
 
         # counts the occurence in an action
-        self.action_count = np.zeros(self.k_arm, dtype=int)  # N(A) = 0
+        self.action_count = [0]*self.k_arm  # N(A) = 0
 
     def action(self):
         # random variable epsilon-gredy simulation
@@ -45,8 +44,8 @@ class Bandit:
 
 
 def bandit_algorithm(runs, time: int, bandit: Bandit, T_MAX=1000):
-    rewards = np.zeros((runs, time))
-    optimal_actions = np.zeros((runs, time))
+    collect_rewards = np.zeros((runs, time))
+    collect_optimal_actions = np.zeros((runs, time))
 
     # number of simulations to obtain the mean
     for run in range(runs):
@@ -57,15 +56,15 @@ def bandit_algorithm(runs, time: int, bandit: Bandit, T_MAX=1000):
             action = bandit.action()
             reward = bandit.step(action)
 
-            rewards[run, t] = reward
+            collect_rewards[run, t] = reward
 
             if action == bandit.optimal_action:
-                optimal_actions[run, t] += 1
+                collect_optimal_actions[run, t] += 1
 
             t += 1
 
-    average_reward = rewards.mean(axis=0)
-    average_optimal_actions = optimal_actions.mean(axis=0)
+    average_reward = collect_rewards.mean(axis=0)
+    average_optimal_actions = collect_optimal_actions.mean(axis=0)
     return average_reward, average_optimal_actions
 
 
@@ -89,9 +88,9 @@ axes[1].set_ylabel("% Optimal action")
 for epsilon in epsilon_values:
     bandit = Bandit(k_arm, epsilon, initial_estimates)
     rewards, optimal = bandit_algorithm(runs, time, bandit)
-    
-    axes[0].plot(rewards, label='$\epsilon = %.02f$' % (epsilon))
-    axes[1].plot(optimal, label='$\epsilon = %.02f$' % (epsilon))
+
+    axes[0].plot(rewards, label='$\epsilon = %g$' % (epsilon))
+    axes[1].plot(optimal, label='$\epsilon = %g$' % (epsilon))
 
 axes[0].legend()
 axes[1].legend()
