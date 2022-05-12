@@ -30,14 +30,14 @@ def bandit_algorithm(k_arm, epsilon, runs, time):
                 action = random.choice(action_list)
 
             # R_t has distribution normal with mean q*(A_t) and variance 1 [Figure 2.1]
-            R = random.gauss(q_true[action], 1)
+            reward = random.gauss(q_true[action], 1)
             # update the occurrences in an action
             action_count[action] = action_count[action] + 1
-            # sample-average technique Q(A) = Q(A) + 1/N(A)*(R - Q(A))
-            q_estimated[action] = q_estimated[action] + (R - q_estimated[action])/action_count[action]
+            # sample-average technique Q(A) = Q(A) + 1/N(A)*(reward - Q(A))
+            q_estimated[action] = q_estimated[action] + (reward - q_estimated[action])/action_count[action]
 
             # collect the reward tp print
-            collect_reward[run, t] = R
+            collect_reward[run, t] = reward
 
             if action == optimal_action:
                 collect_op_action[run, t] += 1
