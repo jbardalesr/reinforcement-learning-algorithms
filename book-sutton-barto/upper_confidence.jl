@@ -1,6 +1,6 @@
 using Random, Distributions
 
-function upper_confidence(k_arm::Int64, epsilon::Float64, runs::Int64, time::Int64)
+function upper_confidence(k_arm::Int64, epsilon::Float64, runs::Int64, time::Int64, c::Float64)
     # collect_reward = zeros(Float64, (runs, time))
     # collect_op_action = zeros(Float64, (runs, time))
 
@@ -15,7 +15,7 @@ function upper_confidence(k_arm::Int64, epsilon::Float64, runs::Int64, time::Int
 
         for t=1:time
             if rand(Uniform(0, 1)) < 1 - epsilon
-                action = argmax(q_estimated)
+                action = argmax(q_estimated + c*sqrt.(log(t)./action_count))
             else
                 action = sample(action_list)
             end
@@ -29,4 +29,4 @@ function upper_confidence(k_arm::Int64, epsilon::Float64, runs::Int64, time::Int
     end 
 end
 
-upper_confidence(10, 0.1, 1, 1000)
+upper_confidence(10, 0.1, 1, 1000, 2.0)
