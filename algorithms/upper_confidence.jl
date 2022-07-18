@@ -4,8 +4,6 @@ using PyPlot
 function upper_confidence(k_arm::Int64, runs::Int64, time::Int64, c::Float64)
     # k-armed bandit with upper-confidence
     collect_reward = zeros(Float64, (runs, time))
-    # collect_op_action = zeros(Float64, (runs, time))
-    action_list = collect(1:k_arm)
     for run=1:runs
         q_true = rand(Normal(0, 1), k_arm)
         # optimal_action = argmax(q_true, dims=1)
